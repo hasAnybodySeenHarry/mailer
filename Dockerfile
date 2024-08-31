@@ -1,4 +1,3 @@
-# Build stage
 FROM golang:1.22-alpine AS builder
 
 ENV CGO_ENABLED=0
@@ -11,13 +10,10 @@ COPY . .
 
 RUN go build -o /bin/app ./cmd/mailer
 
-# Final stage
 FROM scratch
 
 WORKDIR /app
 
 COPY --from=builder /bin/app /app/app
-
-EXPOSE 8080
 
 CMD ["/app/app"]

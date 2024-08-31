@@ -9,5 +9,4 @@ Dockerfile
 docker-compose.yaml
 Makefile
 README.md
-setup.sh
 .gitignore

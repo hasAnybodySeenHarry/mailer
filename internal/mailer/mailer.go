@@ -20,9 +20,9 @@ func New(domain, apiKey string) *Mailer {
 	return &Mailer{mg: mg}
 }
 
-func (m *Mailer) Send(tmpl string, name string, recipient string, token string) error {
+func (m *Mailer) Send(name string, recipient string, token string) error {
 	msg := m.mg.NewMessage(
-		"Admin <mailgun@sandbox4ac9991163664e0a95d76f900c419b1c.mailgun.org>",
+		fmt.Sprintf("Admin <mailgun@%s>", m.mg.Domain()),
 		fmt.Sprintf("Welcome %s", name),
 		fmt.Sprintf("Your activation token is %s", token),
 		recipient,
@@ -51,6 +51,5 @@ func (m *Mailer) Send(tmpl string, name string, recipient string, token string) 
 		time.Sleep(delay)
 	}
 
-	// log.Printf("Hello, %s\n\n%s was used to sign up. If it's you, the token is %s", name, recipient, token)
 	return err
 }

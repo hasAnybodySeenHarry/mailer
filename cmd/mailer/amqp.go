@@ -10,24 +10,26 @@ import (
 func (app *application) connect(uri string) error {
 	var err error
 
-	for {
+	retryAttempts := 6
+	retryWait := 5 * time.Second
+
+	err = app.retry(retryAttempts, retryWait, func() error {
 		app.msgQ.conn, err = amqp.Dial(uri)
-		if err == nil {
-			break
+		if err != nil {
+			app.logger.Printf("Failed to connect to RabbitMQ: %s. Retrying in 5 seconds...", err)
+			return err
 		}
+		return nil
+	})
 
-		app.logger.Printf("Failed to connect to RabbitMQ: %s. Retrying in 5 seconds...", err)
-		time.Sleep(5 * time.Second)
+	if err != nil {
+		return err
 	}
-
 	app.logger.Printf("Connected to RabbitMQ")
 
 	if err = app.establishChannel(); err != nil {
 		return err
 	}
-
-	go app.handleConnectionErrors(uri)
-	go app.handleChannelErrors()
 
 	return nil
 }
@@ -39,27 +41,29 @@ func (app *application) establishChannel() error {
 		return fmt.Errorf("the connection object is nil")
 	}
 
-	for {
-		if app.msgQ.conn != nil && !app.msgQ.conn.IsClosed() {
-			app.msgQ.ch, err = app.msgQ.conn.Channel()
-			if err == nil {
-				break
-			}
-			app.logger.Printf("Failed to create a RabbitMQ channel: %s. Retrying in 5 seconds...", err)
+	retryAttempts := 3
+	retryWait := 5 * time.Second
+
+	err = app.retry(retryAttempts, retryWait, func() error {
+		if app.msgQ.conn == nil || app.msgQ.conn.IsClosed() {
+			// we should add an aggressive break out altogether since if
+			// the conn is closed, it's either the server is shutdown or
+			// there will be a retry for the conn which will then invoke
+			// a concurrent channel retry)
+			return fmt.Errorf("the connection has not established yet")
 		}
 
-		app.logger.Println("Waiting for an connection to be established")
-		time.Sleep(5 * time.Second)
-	}
+		if app.msgQ.ch == nil || app.msgQ.ch.IsClosed() {
+			app.msgQ.ch, err = app.msgQ.conn.Channel()
+			if err != nil {
+				app.logger.Printf("Failed to create a RabbitMQ channel %v. Retrying in 5 seconds...", err)
+				return err
+			}
+		}
 
-	_, err = app.msgQ.ch.QueueDeclare(
-		"email_queue", // name
-		true,          // durable
-		false,         // delete when unused
-		false,         // exclusive
-		false,         // no-wait
-		nil,           // arguments
-	)
+		return nil
+	})
+
 	if err != nil {
 		return err
 	}
@@ -69,16 +73,24 @@ func (app *application) establishChannel() error {
 }
 
 func (app *application) handleConnectionErrors(uri string) {
-	for {
-		closeErr := <-app.msgQ.conn.NotifyClose(make(chan *amqp.Error))
+	closeErr := <-app.msgQ.conn.NotifyClose(make(chan *amqp.Error))
 
-		if closeErr != nil {
-			app.logger.Printf("Connection closed: %s. Attempting to reconnect...", closeErr)
+	select {
+	case <-app.close:
+		app.logger.Println("The server has been signaled to shutdown and won't retry for connections")
+		return
+	default:
+	}
 
-			if err := app.connect(uri); err != nil {
-				app.logger.Fatalf("Failed to reconnect to RabbitMQ: %s", err)
-			}
+	if closeErr != nil {
+		app.logger.Printf("Connection closed: %s. Attempting to reconnect...", closeErr)
+
+		if err := app.connect(uri); err != nil {
+			app.logger.Fatalf("Failed to reconnect to RabbitMQ: %s", err)
 		}
+
+		go app.handleConnectionErrors(uri)
+		go app.handleChannelErrors()
 	}
 }
 
