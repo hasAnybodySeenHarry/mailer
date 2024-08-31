@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -36,10 +37,11 @@ func main() {
 		close:  make(chan struct{}, 1),
 	}
 
-	if err := app.connect(cfg.amqp); err != nil {
+	uri := fmt.Sprintf("amqp://%s:%s@%s:%d/", cfg.msgProxy.username, cfg.msgProxy.password, cfg.msgProxy.host, cfg.msgProxy.port)
+	if err := app.connect(uri); err != nil {
 		app.logger.Fatalf("Failed to connect to RabbitMQ: %s", err)
 	}
-	go app.handleConnectionErrors(cfg.amqp)
+	go app.handleConnectionErrors(uri)
 
 	defer app.msgQ.ch.Close()
 	defer app.msgQ.conn.Close()
