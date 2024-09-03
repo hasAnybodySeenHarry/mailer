@@ -19,8 +19,10 @@ type application struct {
 }
 
 type msgQ struct {
-	conn *amqp.Connection
-	ch   *amqp.Channel
+	conn       *amqp.Connection
+	ch         *amqp.Channel
+	chanInSync bool
+	mu         sync.Mutex
 }
 
 func main() {

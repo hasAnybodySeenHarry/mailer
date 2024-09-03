@@ -35,3 +35,21 @@ func (app *application) background(fn func()) {
 		fn()
 	}()
 }
+
+func (app *application) setChannelInSync(state bool) {
+	app.msgQ.mu.Lock()
+	defer app.msgQ.mu.Unlock()
+	app.msgQ.chanInSync = state
+}
+
+func (app *application) checkAndLock() bool {
+	app.msgQ.mu.Lock()
+	if app.msgQ.chanInSync {
+		app.msgQ.mu.Unlock()
+		return false
+	}
+
+	app.msgQ.chanInSync = true
+	defer app.msgQ.mu.Unlock()
+	return true
+}

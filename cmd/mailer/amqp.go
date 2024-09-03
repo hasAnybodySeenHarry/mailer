@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -35,9 +36,16 @@ func (app *application) connect(uri string) error {
 }
 
 func (app *application) establishChannel() error {
+	ok := app.checkAndLock()
+	if !ok {
+		app.logger.Println("WARNING: concurrent channel establishment detected. Aborting the current call.")
+		return nil
+	}
+
 	var err error
 
 	if app.msgQ.conn == nil {
+		app.setChannelInSync(false)
 		return fmt.Errorf("the connection object is nil")
 	}
 
@@ -65,10 +73,19 @@ func (app *application) establishChannel() error {
 	})
 
 	if err != nil {
+		app.setChannelInSync(false)
 		return err
 	}
 
 	app.logger.Printf("Channel established and queue declared")
+
+	app.msgQ.mu.Lock()
+	defer app.msgQ.mu.Unlock()
+	if !app.msgQ.chanInSync {
+		panic(errors.New("the channel sync state is broken"))
+	}
+	app.msgQ.chanInSync = false
+
 	return nil
 }
 
