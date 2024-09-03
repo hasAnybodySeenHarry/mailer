@@ -33,9 +33,9 @@ spec:
   - type: Pods
     pods:
       metric:
-        name: email_queue_length
+        name: rabbitmq_queue_messages_ready
       target:
         type: Value
-        value: {{ .Values.autoscaling.queueLength }}
+        averageValue: {{ .Values.autoscaling.queueLength }}
   {{- end }}
 {{- end }}
