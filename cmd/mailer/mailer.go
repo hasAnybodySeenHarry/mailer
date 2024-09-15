@@ -21,6 +21,7 @@ func (app *application) consume() {
 
 	go func() {
 		for {
+			// queue declaration
 			_, err = app.msgQ.ch.QueueDeclare(
 				"email_queue",
 				true,
@@ -35,6 +36,7 @@ func (app *application) consume() {
 				continue
 			}
 
+			// queue consumption
 			msgs, err := app.msgQ.ch.Consume(
 				"email_queue", // queue
 				"",            // consumer
@@ -51,28 +53,30 @@ func (app *application) consume() {
 			}
 			app.logger.Printf("Consuming from the queue named %s", "email_queue")
 
+			// cancellation watch loop
 			for {
-				if err := ctx.Err(); err != nil {
+				// exit or handle tasks
+				select {
+				case <-ctx.Done():
 					return
-				}
-
-				d, ok := <-msgs
-				if !ok {
-					app.logger.Println("Error reading message from the channel.")
-					break
-				}
-
-				app.background(func() {
-					err := app.handleMail(d)
-					if err != nil {
-						app.logger.Println(err)
+				case d, ok := <-msgs:
+					if !ok {
+						app.logger.Println("Error reading message from the channel.")
+						break
 					}
-				})
+
+					app.background(func() {
+						err := app.handleMailJob(d)
+						if err != nil {
+							app.logger.Println(err)
+						}
+					})
+				}
 			}
 		}
 	}()
 
-	app.logger.Println("Ready to fulfill the jobs.")
+	app.logger.Println("Ready to fulfill the jobs...")
 	<-relay
 	cancel()
 
@@ -94,7 +98,7 @@ func (app *application) consume() {
 	app.logger.Println("Shutdown completed.")
 }
 
-func (app *application) handleMail(d amqp.Delivery) error {
+func (app *application) handleMailJob(d amqp.Delivery) error {
 	var msg struct {
 		Email    string `json:"email"`
 		Name     string `json:"name"`
