@@ -60,6 +60,7 @@ func (app *application) consume() {
 				case <-ctx.Done():
 					return
 				case d, ok := <-msgs:
+					time.Sleep(45 * time.Second)
 					if !ok {
 						app.logger.Println("Error reading message from the channel.")
 						break
@@ -99,8 +100,6 @@ func (app *application) consume() {
 }
 
 func (app *application) handleMailJob(d amqp.Delivery) error {
-	time.Sleep(45 * time.Second)
-
 	var msg struct {
 		Email    string `json:"email"`
 		Name     string `json:"name"`
