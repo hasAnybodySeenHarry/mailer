@@ -30,12 +30,16 @@ spec:
         averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
   {{- end }}
   {{- if .Values.autoscaling.queueLength }}
-  - type: Pods
-    pods:
+  - type: Object
+    object:
       metric:
         name: rabbitmq_queue_messages_ready
+      describedObject:
+        kind: Pod
+        name: rabbitmq
+        apiVersion: v1
       target:
         type: Value
-        averageValue: {{ .Values.autoscaling.queueLength }}
+        averageValue: 1
   {{- end }}
 {{- end }}
