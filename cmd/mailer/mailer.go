@@ -53,8 +53,6 @@ func (app *application) consume() {
 			}
 			app.logger.Printf("Consuming from the queue named %s", "email_queue")
 
-			time.Sleep(6 * time.Hour)
-
 			// cancellation watch loop
 			for {
 				// exit or handle tasks

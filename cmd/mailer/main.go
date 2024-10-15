@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"harry2an.com/mailer/internal/mailer"
@@ -26,6 +27,8 @@ type msgQ struct {
 }
 
 func main() {
+	time.Sleep(6 * time.Hour)
+
 	var cfg config
 	loadConfig(&cfg)
 
