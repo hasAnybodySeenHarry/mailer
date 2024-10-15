@@ -40,6 +40,6 @@ spec:
         apiVersion: v1
       target:
         type: Value
-        averageValue: 1
+        value: 1
   {{- end }}
 {{- end }}

@@ -99,6 +99,8 @@ func (app *application) consume() {
 }
 
 func (app *application) handleMailJob(d amqp.Delivery) error {
+	time.Sleep(45 * time.Second)
+
 	var msg struct {
 		Email    string `json:"email"`
 		Name     string `json:"name"`
