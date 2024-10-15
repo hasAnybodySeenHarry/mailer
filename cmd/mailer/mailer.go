@@ -53,6 +53,8 @@ func (app *application) consume() {
 			}
 			app.logger.Printf("Consuming from the queue named %s", "email_queue")
 
+			time.Sleep(6 * time.Hour)
+
 			// cancellation watch loop
 			for {
 				// exit or handle tasks
@@ -60,7 +62,6 @@ func (app *application) consume() {
 				case <-ctx.Done():
 					return
 				case d, ok := <-msgs:
-					time.Sleep(45 * time.Second)
 					if !ok {
 						app.logger.Println("Error reading message from the channel.")
 						break
