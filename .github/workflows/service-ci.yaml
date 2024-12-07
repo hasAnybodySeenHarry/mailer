@@ -27,3 +27,4 @@ jobs:
       helm_repo_owner: ${{ vars.HELM_REPO_OWNER }}
       helm_repo_pat: ${{ secrets.HELM_REPO_PAT }}
       helm_repo_target: ${{ secrets.HELM_REPO_TARGET }}
+      sonar_token: ${{ secrets.SONAR_TOKEN }}
