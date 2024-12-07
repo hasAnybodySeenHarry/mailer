@@ -1,4 +1,4 @@
-name: Service-CI
+name: Service CI pipeline
 on:
   push:
     branches:
