@@ -18,7 +18,7 @@ jobs:
     with:
       go_version: "1.22"
       helm_version: "v3.13.3"
-      helm_folder: app
+      helm_folder: "app"
     secrets:
       docker_username: ${{ secrets.DOCKERHUB_USERNAME }}
       docker_password: ${{ secrets.DOCKERHUB_PASSWORD }}
