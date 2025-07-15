@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"sync"
 
@@ -39,6 +40,8 @@ func main() {
 		close:  make(chan struct{}, 1),
 	}
 
+	startTCPListener(":8081")
+
 	uri := fmt.Sprintf("amqp://%s:%s@%s:%d/", cfg.msgProxy.username, cfg.msgProxy.password, cfg.msgProxy.host, cfg.msgProxy.port)
 	if err := app.connect(uri); err != nil {
 		app.logger.Fatalf("Failed to connect to RabbitMQ: %s", err)
@@ -49,4 +52,20 @@ func main() {
 	defer app.msgQ.conn.Close()
 
 	app.consume()
+}
+
+func startTCPListener(addr string) {
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		log.Fatalf("Failed to start TCP health check listener: %s", err)
+	}
+	defer ln.Close()
+
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			continue
+		}
+		conn.Close()
+	}
 }

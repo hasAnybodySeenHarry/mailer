@@ -1,5 +1,7 @@
 replicaCount: 1
 
+healthPort: 8081
+
 image:
   registry: docker.io
   repository: ""
@@ -54,6 +56,21 @@ podDisruptionBudget:
   enabled: false
   minAvailable: 1
   maxUnavailable: ""
+
+livenessProbe:
+  port: health
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+readinessProbe:
+  port: health
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+startupProbe:
+  port: health
+  initialDelaySeconds: 5
+  periodSeconds: 10
 
 env:
 - name: AMQP_USERNAME

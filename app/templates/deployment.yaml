@@ -42,6 +42,25 @@ spec:
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          ports:
+          - containerPort: {{ .Values.healthPort | default 8081 }}
+            name: health
+            protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.livenessProbe.port | default "health" }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds | default 5 }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds | default 10 }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.readinessProbe.port | default "health" }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds | default 5 }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds | default 10 }}
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.startupProbe.port | default "health" }}
+            initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds | default 5 }}
+            periodSeconds: {{ .Values.startupProbe.periodSeconds | default 10 }}
           env:
             {{- toYaml .Values.env | nindent 12 }}
       {{- with .Values.volumes }}
